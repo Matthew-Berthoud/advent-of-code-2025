@@ -6,55 +6,75 @@ run = EXAMPLE
 # run = INPUT
 
 
-class Point:
-    def __init__(self, id: int, coords: list[str]):
-        assert len(coords) == 3, f"There are not three coordinates in {coords}"
-        self.id = id
-        self.X = int(coords[0])
-        self.Y = int(coords[1])
-        self.Z = int(coords[2])
-        self.distances: dict[int, float] = {}
-        self.closest: list = []
+def distance(a, b):
+    distance = math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2)
 
-    def distance(self, other):
-        distance = math.sqrt(
-            (self.X - other.X) ** 2 + (self.Y - other.Y) ** 2 + (self.Z - other.Z) ** 2
-        )
-        self.distances[other.id] = distance
-        i = 0
-        for i, point in enumerate(self.closest):
-            if self.distances[point.id] < distance:
-                continue
-            else:
-                break
-        self.closest.insert(i, other)
-
-        return distance
-
-    def __str__(self):
-        return f"Point: {self.id}\n\t({self.X}, {self.Y}, {self.Z})\n\tdistances: {', '.join([f'{k}: {round(v, 2)}' for k, v in self.distances.items()])}\n\tclosest: {', '.join([str(point.id) for point in self.closest])}"
-
-    def __eq__(self, other):
-        return self.X == other.X and self.Y == other.Y and self.Z == other.Z
+    return distance
 
 
 with open(run["file"]) as f:
-    points: list[Point] = [
-        Point(i, line.strip().split(",")) for i, line in enumerate(f.readlines())
+    points: list[tuple[int, ...]] = [
+        tuple([int(val) for val in line.strip().split(",")]) for line in f.readlines()
     ]
 
+distances = [[0.0] * len(points) for _ in range(len(points))]
 
-# distances = [[0.0] * len(points) for _ in range(len(points))]
+closest_pairs = []
 
 for i, a in enumerate(points):
     for j, b in enumerate(points):
         if a == b:
             continue
-        # distances[i][j] =
-        d = a.distance(b)
+        d = distance(a, b)
+        distances[i][j] = d
+        k = 0
+        do_it = True
+        for k, (i2, j2) in enumerate(closest_pairs):
+            if distances[i2][j2] < d:
+                continue
+            if i2 == j and j2 == i:
+                do_it = False
+            break
+        if do_it:
+            closest_pairs.insert(k, (i, j))
 
-# for line in distances:
-#     print([round(val, 2) for val in line])
+circuits = [set([i]) for i in range(len(points))]
+count = 1
+circuit_idx = -1
+for a, b in closest_pairs:
+    already_connected = False
+    new_circuit = set((a, b))
+    overlapping_circuits = []
+    for i, circuit in enumerate(circuits):
+        if a in circuit and b in circuit:
+            already_connected = True
+            break
+        if a in circuit:
+            overlapping_circuits.append(i)
+        elif b in circuit:
+            overlapping_circuits.append(i)
 
-for point in points:
-    print(point)
+    if already_connected:
+        continue
+
+    assert len(overlapping_circuits) == 2
+    new_circuit = new_circuit.union(circuits.pop(max(overlapping_circuits)))
+    new_circuit = new_circuit.union(circuits.pop(min(overlapping_circuits)))
+
+    circuits.append(new_circuit)
+    print(f"connecting {a}: {points[a]} and {b}: {points[b]}")
+    count += 1
+    if count == run["connections"]:
+        break
+
+lengths = [len(c) for c in circuits]
+total = 1
+for _ in range(3):
+    biggest = max(lengths)
+    lengths.remove(biggest)
+    print(biggest)
+    total *= biggest
+
+print(circuits)
+print(len(circuits))
+print(total)
