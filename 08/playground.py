@@ -1,9 +1,11 @@
+import heapq
 import math
+from collections import defaultdict
 
 EXAMPLE = {"file": "example.txt", "connections": 10}
 INPUT = {"file": "input.txt", "connections": 1000}
-run = EXAMPLE
-# run = INPUT
+# run = EXAMPLE
+run = INPUT
 
 
 def distance(a, b):
@@ -17,64 +19,51 @@ with open(run["file"]) as f:
         tuple([int(val) for val in line.strip().split(",")]) for line in f.readlines()
     ]
 
-distances = [[0.0] * len(points) for _ in range(len(points))]
-
-closest_pairs = []
+len_points = len(points)
+# keys are distances, values are lists of tuples of points
+distances = defaultdict(list)
+dist_min_heap = []
+heapq.heapify(dist_min_heap)
 
 for i, a in enumerate(points):
-    for j, b in enumerate(points):
-        if a == b:
-            continue
+    for j in range(i + 1, len_points):
+        b = points[j]
         d = distance(a, b)
-        distances[i][j] = d
-        k = 0
-        do_it = True
-        for k, (i2, j2) in enumerate(closest_pairs):
-            if distances[i2][j2] < d:
-                continue
-            if i2 == j and j2 == i:
-                do_it = False
-            break
-        if do_it:
-            closest_pairs.insert(k, (i, j))
+        distances[d].append((i, j))
+        heapq.heappush(dist_min_heap, d)
 
-circuits = [set([i]) for i in range(len(points))]
-count = 1
-circuit_idx = -1
-for a, b in closest_pairs:
-    already_connected = False
-    new_circuit = set((a, b))
-    overlapping_circuits = []
-    for i, circuit in enumerate(circuits):
-        if a in circuit and b in circuit:
-            already_connected = True
-            break
-        if a in circuit:
-            overlapping_circuits.append(i)
-        elif b in circuit:
-            overlapping_circuits.append(i)
 
-    if already_connected:
+circuits = defaultdict(set)
+circuit_max_heap = []
+heapq.heapify(circuit_max_heap)
+
+for _ in range(run["connections"]):
+    min_distance = heapq.heappop(dist_min_heap)
+    i, j = distances[min_distance].pop()
+    if circuits[i] == circuits[j] and len(circuits[i]) > 0:
         continue
+    circuit = {i, j}
+    circuit.update(circuits[i])
+    circuit.update(circuits[j])
+    for idx in circuit:
+        circuits[idx] = circuit
 
-    assert len(overlapping_circuits) == 2
-    new_circuit = new_circuit.union(circuits.pop(max(overlapping_circuits)))
-    new_circuit = new_circuit.union(circuits.pop(min(overlapping_circuits)))
+set_of_circuits = set(
+    [frozenset(circuits[i]) for i in range(len(points)) if len(circuits[i]) > 0]
+)
+print(set_of_circuits)
 
-    circuits.append(new_circuit)
-    print(f"connecting {a}: {points[a]} and {b}: {points[b]}")
-    count += 1
-    if count == run["connections"]:
-        break
+circuit_lengths = [-len(circuit) for circuit in set_of_circuits]
+heapq.heapify(circuit_lengths)
 
-lengths = [len(c) for c in circuits]
+print(circuit_lengths)
+
 total = 1
 for _ in range(3):
-    biggest = max(lengths)
-    lengths.remove(biggest)
-    print(biggest)
-    total *= biggest
+    if len(circuit_lengths) == 0:
+        break
+    circuit_length = heapq.heappop(circuit_lengths)
+    print(circuit_length)
+    total *= -1 * circuit_length
 
-print(circuits)
-print(len(circuits))
 print(total)
