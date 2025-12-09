@@ -40,21 +40,39 @@ for i, (x1, y1) in enumerate(reds):
         area_to_coords[area].add((x0, x, y0, y))
 
 
-def fill(x, y):
-    return new_greens, success
+def fill(x, y, new_greens=set()):
+    if x < 0 or y < 0 or x > 100 or y > 100:
+        return set(), False
+    if (x, y) in greens or (x, y) in new_greens:
+        return new_greens, True
+    new_greens, success = fill(x - 1, y, new_greens)
+    if not success:
+        return new_greens, success
+    new_greens, success = fill(x, y - 1, new_greens)
+    if not success:
+        return new_greens, success
+    new_greens, success = fill(x + 1, y, new_greens)
+    if not success:
+        return new_greens, success
+    new_greens, success = fill(x, y + 1, new_greens)
+    if not success:
+        return new_greens, success
+    new_greens.add((x, y))
+    return new_greens, True
 
 
 # loop thru popping from the max heap
 # and do a recursive fill starting from indside the rectangle
 # if you hit a 0 index without hitting a border it's invalid.
 # in order for this to run efficiently the recursive fill alg will prioritize filling upper left, then left, then upper.
+answer = 0
 while len(areas) > 0:
     area = -heapq.heappop(areas)
     for x0, x, y0, y in area_to_coords[area]:
         mid_x = int(x0 + (x - x0) / 2)
         mid_y = int(y0 + (y - y0) / 2)
         point = (mid_x, mid_y)
-        new_greens, success = fill(x, y)
+        new_greens, success = fill(mid_x, mid_y)
         if not success:
             break
         greens.update(new_greens)
@@ -65,3 +83,7 @@ while len(areas) > 0:
                     break
             if not success:
                 break
+        if success:
+            answer = area
+            break
+print(answer)
