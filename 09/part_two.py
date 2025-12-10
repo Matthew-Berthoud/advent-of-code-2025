@@ -39,51 +39,61 @@ for i, (x1, y1) in enumerate(reds):
         heapq.heappush(areas, -area)
         area_to_coords[area].add((x0, x, y0, y))
 
-
-def fill(x, y, new_greens=set()):
-    if x < 0 or y < 0 or x > 100 or y > 100:
-        return set(), False
-    if (x, y) in greens or (x, y) in new_greens:
-        return new_greens, True
-    new_greens, success = fill(x - 1, y, new_greens)
-    if not success:
-        return new_greens, success
-    new_greens, success = fill(x, y - 1, new_greens)
-    if not success:
-        return new_greens, success
-    new_greens, success = fill(x + 1, y, new_greens)
-    if not success:
-        return new_greens, success
-    new_greens, success = fill(x, y + 1, new_greens)
-    if not success:
-        return new_greens, success
-    new_greens.add((x, y))
-    return new_greens, True
-
+# new_greens = set()
+#
+#
+# def flood_fill(x, y, new_greens=set()):
+#     if (x, y) in greens:
+#         return new_greens
+#     if x < 0 or y < 0:
+#         raise ValueError("Flood filling the wrong side")
+#
+#     new_greens.add((x, y))
+#     new_greens.update(flood_fill(x - 1, y, new_greens))
+#     new_greens.update(flood_fill(x, y - 1, new_greens))
+#     new_greens.update(flood_fill(x + 1, y, new_greens))
+#     new_greens.update(flood_fill(x, y + 1, new_greens))
+#
+#     return new_greens
+#
+#
+# try:
+#     greens.update(flood_fill(5000, 5000))
+# except ValueError:
+#     print("fuck")
+# exit()
 
 # loop thru popping from the max heap
 # and do a recursive fill starting from indside the rectangle
 # if you hit a 0 index without hitting a border it's invalid.
 # in order for this to run efficiently the recursive fill alg will prioritize filling upper left, then left, then upper.
 answer = 0
-while len(areas) > 0:
+while answer == 0 and len(areas) > 0:
     area = -heapq.heappop(areas)
     for x0, x, y0, y in area_to_coords[area]:
         mid_x = int(x0 + (x - x0) / 2)
         mid_y = int(y0 + (y - y0) / 2)
-        point = (mid_x, mid_y)
-        new_greens, success = fill(mid_x, mid_y)
-        if not success:
+        node = (mid_x, mid_y)
+
+        q = []
+        q.append(node)
+        while len(q) > 0:
+            n = q.pop(0)
+
+        try:
+            greens.update(flood_fill(mid_x, mid_y))
+        except ValueError:
             break
-        greens.update(new_greens)
+
+        all_green = True
         for i in range(x0, x + 1):
-            for j in range(x0, x + 1):
+            for j in range(y0, y + 1):
                 if (i, j) not in greens:
-                    success = False
+                    all_green = False
                     break
-            if not success:
+            if not all_green:
                 break
-        if success:
+        if all_green:
             answer = area
             break
 print(answer)
