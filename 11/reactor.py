@@ -11,10 +11,11 @@ for line in lines:
     outputs = line
     devices[device] = outputs
 
-count = [0]
+count = 0
 
 
 def get_outputs(start):
+    global count
     outputs = devices[start]
     for out in outputs:
         print(f"From {start} to {out}")
@@ -22,7 +23,7 @@ def get_outputs(start):
             outputs = get_outputs(out)
         else:
             print()
-            count[0] += 1
+            count += 1
     return outputs
 
 
@@ -30,4 +31,4 @@ def get_outputs(start):
 
 get_outputs(START)
 
-print(count[0])
+print(count)
